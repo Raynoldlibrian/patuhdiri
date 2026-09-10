@@ -187,7 +187,7 @@ function Header({ tab, setTab }) {
                 Patuhdiri
               </div>
             </div>
-            <div style={{ fontSize: 12, color: "#B9C2CE" }}>
+            <div style={{ fontSize: 12px, color: "#B9C2CE" }}>
                 Panel Tracking Unggahan Dokumen Kinerja Instansi
             </div>
             <div style={{ fontSize: 11.5, color: "#8FA0B3", letterSpacing: 0.4 }}>
