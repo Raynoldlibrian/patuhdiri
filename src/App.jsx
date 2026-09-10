@@ -186,9 +186,9 @@ function Header({ tab, setTab }) {
               <div style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700, letterSpacing: 0.3, color: COLORS.wordmarkGold }}>
                 Patuhdiri
               </div>
-              <div style={{ fontSize: 11, color: "#8FA0B3" }}>
+            </div>
+            <div style={{ fontSize: 11, color: "#8FA0B3" }}>
                 Panel Tracking Unggahan Dokumen Kinerja Instansi
-              </div>
             </div>
             <div style={{ fontSize: 11.5, color: "#B9C2CE", letterSpacing: 0.4 }}>
               Bagian Organisasi Sekretariat Daerah Kabupaten Indragiri Hulu
