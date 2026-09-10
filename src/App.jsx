@@ -187,10 +187,10 @@ function Header({ tab, setTab }) {
                 Patuhdiri
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#8FA0B3" }}>
+            <div style={{ fontSize: 12, color: "#B9C2CE" }}>
                 Panel Tracking Unggahan Dokumen Kinerja Instansi
             </div>
-            <div style={{ fontSize: 11.5, color: "#B9C2CE", letterSpacing: 0.4 }}>
+            <div style={{ fontSize: 11.5, color: "#8FA0B3", letterSpacing: 0.4 }}>
               Bagian Organisasi Sekretariat Daerah Kabupaten Indragiri Hulu
             </div>
           </div>
