@@ -180,7 +180,7 @@ function Header({ tab, setTab }) {
     <div style={{ background: COLORS.navyDeep, color: "#F6F3EC" }}>
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "20px 24px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-          <img src="/logo-header.png" alt="Patuhdiri" style={{ height: 64, width: "auto", display: "block" }} />
+          <img src="/logo-header.png" alt="Patuhdiri" style={{ height: 64px, width: "auto", display: "block" }} />
           <div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700, letterSpacing: 0.3, color: COLORS.wordmarkGold }}>
