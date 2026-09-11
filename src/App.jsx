@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { api } from "./api.js";
 
-const TAHUN = 2026;
+const TAHUN_APLIKASI_DIMULAI = 2026; // tahun pertama Patuhdiri mulai dipakai
 
 // Dokumen dengan jadwal triwulan (kode -> nomor triwulan). Sesuaikan kalau daftar
 // dokumen dari Inspektorat berubah kodenya.
@@ -22,7 +22,7 @@ const TRIWULAN_MAP = {
 // ============ HELPER JADWAL TRIWULAN ============
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-function getTriwulanInfo(tw, tahun = TAHUN) {
+function getTriwulanInfo(tw, tahun) {
   const startMonth = (tw - 1) * 3;
   const endMonth = startMonth + 2;
   const deadlineMonth = (endMonth + 1) % 12;
@@ -34,7 +34,7 @@ function getTriwulanInfo(tw, tahun = TAHUN) {
   };
 }
 
-function isTriwulanUnlocked(tw, tahun = TAHUN) {
+function isTriwulanUnlocked(tw, tahun) {
   const { startDate } = getTriwulanInfo(tw, tahun);
   return new Date() >= startDate;
 }
@@ -169,7 +169,7 @@ function StatCard({ label, value, color, onClick }) {
 }
 
 // ============ HEADER ============
-function Header({ tab, setTab }) {
+function Header({ tab, setTab, tahun, setTahun, tahunOptions }) {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "input", label: "Input OPD", icon: ClipboardList },
@@ -180,23 +180,34 @@ function Header({ tab, setTab }) {
     <div style={{ background: COLORS.navyDeep, color: "#F6F3EC" }}>
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "20px 24px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-          <img src="/logo-header.png" alt="Patuhdiri" style={{ height: 64px, width: "auto", display: "block" }} />
+          <img src="/logo-header.png" alt="Patuhdiri" style={{ height: 64, width: "auto", display: "block" }} />
           <div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700, letterSpacing: 0.3, color: COLORS.wordmarkGold }}>
                 Patuhdiri
               </div>
             </div>
-            <div style={{ fontSize: 12px, color: "#B9C2CE" }}>
+            <div style={{ fontSize: 12, color: "#B9C2CE" }}>
                 Panel Tracking Unggahan Dokumen Kinerja Instansi
             </div>
             <div style={{ fontSize: 11.5, color: "#8FA0B3", letterSpacing: 0.4 }}>
               Bagian Organisasi Sekretariat Daerah Kabupaten Indragiri Hulu
             </div>
           </div>
-          <div style={{ marginLeft: "auto", fontSize: 12.5, color: "#B9C2CE", border: "1px solid #3A4E64", borderRadius: 20, padding: "5px 12px" }}>
-            Tahun Pelaporan {TAHUN}
-          </div>
+          <select
+            value={tahun}
+            onChange={(e) => setTahun(Number(e.target.value))}
+            style={{
+              marginLeft: "auto", fontSize: 12.5, color: "#F6F3EC", background: COLORS.navyDeep,
+              border: "1px solid #3A4E64", borderRadius: 20, padding: "6px 14px", cursor: "pointer",
+            }}
+          >
+            {tahunOptions.map(y => (
+              <option key={y} value={y} style={{ color: COLORS.ink, background: COLORS.paper }}>
+                Tahun Pelaporan {y}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           {tabs.map(t => {
@@ -222,7 +233,7 @@ function Header({ tab, setTab }) {
 }
 
 // ============ TAB: INPUT OPD ============
-function InputOPD({ opdList, dokumenList }) {
+function InputOPD({ opdList, dokumenList, tahun }) {
   const [selectedOpd, setSelectedOpd] = useState(null);
   const [pin, setPin] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -241,11 +252,11 @@ function InputOPD({ opdList, dokumenList }) {
     if (!selectedOpd) return;
     setLoading(true);
     setError("");
-    api.getChecklist(selectedOpd.id_opd, TAHUN)
+    api.getChecklist(selectedOpd.id_opd, tahun)
       .then(setChecklist)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [selectedOpd]);
+  }, [selectedOpd, tahun]);
 
   useEffect(() => {
     if (unlocked) loadChecklist();
@@ -280,7 +291,7 @@ function InputOPD({ opdList, dokumenList }) {
     if (!linkInput.trim()) return;
     setSaving(true);
     api.submitDokumen({
-      opdId: selectedOpd.id_opd, tahun: TAHUN, kodeDokumen: modalDoc.kode_dokumen,
+      opdId: selectedOpd.id_opd, tahun, kodeDokumen: modalDoc.kode_dokumen,
       link: linkInput.trim(), catatanOpd: catatanOpdInput.trim(),
     })
       .then(() => { setModalDoc(null); loadChecklist(); })
@@ -290,7 +301,7 @@ function InputOPD({ opdList, dokumenList }) {
 
   const batalSubmit = () => {
     setSaving(true);
-    api.cancelDokumen({ opdId: selectedOpd.id_opd, tahun: TAHUN, kodeDokumen: modalDoc.kode_dokumen })
+    api.cancelDokumen({ opdId: selectedOpd.id_opd, tahun, kodeDokumen: modalDoc.kode_dokumen })
       .then(() => { setModalDoc(null); loadChecklist(); })
       .catch(err => setError(err.message))
       .finally(() => setSaving(false));
@@ -372,8 +383,8 @@ function InputOPD({ opdList, dokumenList }) {
           <div style={{ background: COLORS.paper, borderRadius: 12, border: `1px solid ${COLORS.line}`, overflow: "hidden" }}>
             {docs.map((doc, i) => {
               const tw = TRIWULAN_MAP[doc.kode_dokumen];
-              const twInfo = tw ? getTriwulanInfo(tw) : null;
-              const unlockedDoc = tw ? isTriwulanUnlocked(tw) : true;
+              const twInfo = tw ? getTriwulanInfo(tw, tahun) : null;
+              const unlockedDoc = tw ? isTriwulanUnlocked(tw, tahun) : true;
               return (
                 <div key={doc.kode_dokumen} onClick={() => unlockedDoc && openModal(doc)} style={{
                   display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
@@ -461,7 +472,7 @@ function InputOPD({ opdList, dokumenList }) {
 }
 
 // ============ TAB: VERIFIKASI ============
-function Verifikasi({ verifikatorList }) {
+function Verifikasi({ verifikatorList, tahun }) {
   const [verifikator, setVerifikator] = useState(null);
   const [namaInput, setNamaInput] = useState("");
   const [pinInput, setPinInput] = useState("");
@@ -478,11 +489,11 @@ function Verifikasi({ verifikatorList }) {
   const loadPending = useCallback(() => {
     setLoading(true);
     setError("");
-    api.getPending(TAHUN)
+    api.getPending(tahun)
       .then(setPendingList)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [tahun]);
 
   useEffect(() => {
     if (verifikator) loadPending();
@@ -501,7 +512,7 @@ function Verifikasi({ verifikatorList }) {
   const verify = (status) => {
     setSaving(true);
     api.submitVerifikasi({
-      opdId: modal.opd_id, tahun: TAHUN, kodeDokumen: modal.kode_dokumen,
+      opdId: modal.opd_id, tahun, kodeDokumen: modal.kode_dokumen,
       status, catatan: status === "Perlu Perbaikan" ? catatan : "", verifikator: verifikator.nama,
     })
       .then(() => { setModal(null); setCatatan(""); loadPending(); })
@@ -640,15 +651,15 @@ function Verifikasi({ verifikatorList }) {
 }
 
 // ============ TAB: DASHBOARD ============
-function DocChecklistDetail({ opd }) {
+function DocChecklistDetail({ opd, tahun }) {
   const [subs, setSubs] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setSubs(null);
     setError("");
-    api.getChecklist(opd.id_opd, TAHUN).then(setSubs).catch(err => setError(err.message));
-  }, [opd]);
+    api.getChecklist(opd.id_opd, tahun).then(setSubs).catch(err => setError(err.message));
+  }, [opd, tahun]);
 
   if (error) return <ErrorBox message={error} />;
   if (!subs) return <Spinner label="Memuat checklist..." />;
@@ -748,7 +759,7 @@ function MasterDokumenModal({ dokumenList, onClose }) {
   );
 }
 
-function Dashboard({ opdList, dokumenList }) {
+function Dashboard({ opdList, dokumenList, tahun }) {
   const [selectedOpdId, setSelectedOpdId] = useState("");
   const [showMasterDokumen, setShowMasterDokumen] = useState(false);
   const [summary, setSummary] = useState(null);
@@ -756,8 +767,8 @@ function Dashboard({ opdList, dokumenList }) {
 
   const loadSummary = useCallback(() => {
     setError("");
-    api.getDashboard(TAHUN).then(setSummary).catch(err => setError(err.message));
-  }, []);
+    api.getDashboard(tahun).then(setSummary).catch(err => setError(err.message));
+  }, [tahun]);
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -846,10 +857,7 @@ function Dashboard({ opdList, dokumenList }) {
         </div>
         {rows.map((r, i) => (
           <div key={r.opd_id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px 90px 140px", alignItems: "center", padding: "12px 16px", borderTop: i > 0 ? `1px solid ${COLORS.line}` : "none" }}>
-            <div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>{r.singkatan}</div>
-              <div style={{ fontSize: 11.5, color: COLORS.slate }}>{r.nama_opd}</div>
-            </div>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.ink }}>{r.nama_opd}</div>
             <div style={{ fontSize: 13, color: COLORS.green, fontWeight: 600 }}>{r.sesuai}</div>
             <div style={{ fontSize: 13, color: COLORS.amber, fontWeight: 600 }}>{r.submitted - r.sesuai - r.perlu_perbaikan}</div>
             <div style={{ fontSize: 13, color: COLORS.red, fontWeight: 600 }}>{r.perlu_perbaikan}</div>
@@ -863,7 +871,7 @@ function Dashboard({ opdList, dokumenList }) {
         ))}
       </div>
 
-      {selectedOpd && <DocChecklistDetail opd={selectedOpd} />}
+      {selectedOpd && <DocChecklistDetail opd={selectedOpd} tahun={tahun} />}
 
       {showMasterDokumen && <MasterDokumenModal dokumenList={dokumenList} onClose={() => setShowMasterDokumen(false)} />}
     </div>
@@ -975,6 +983,17 @@ export default function App() {
   const [verifikatorList, setVerifikatorList] = useState(null);
   const [initError, setInitError] = useState("");
 
+  const currentYear = new Date().getFullYear();
+  const [tahun, setTahun] = useState(currentYear);
+
+  // Opsi dropdown tahun: dari TAHUN_APLIKASI_DIMULAI sampai tahun berjalan (terbaru di atas)
+  const tahunOptions = useMemo(() => {
+    const maxYear = Math.max(currentYear, TAHUN_APLIKASI_DIMULAI);
+    const years = [];
+    for (let y = maxYear; y >= TAHUN_APLIKASI_DIMULAI; y--) years.push(y);
+    return years;
+  }, [currentYear]);
+
   const loadInitialData = useCallback(() => {
     setInitError("");
     Promise.all([api.getOpd(), api.getDokumen(), api.getVerifikator()])
@@ -992,16 +1011,16 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.ink }}>
-      <Header tab={tab} setTab={setTab} />
+      <Header tab={tab} setTab={setTab} tahun={tahun} setTahun={setTahun} tahunOptions={tahunOptions} />
 
       {initError && <ErrorBox message={`Gagal memuat data awal: ${initError}`} onRetry={loadInitialData} />}
       {!ready && !initError && <Spinner label="Memuat aplikasi Patuhdiri..." />}
 
       {ready && (
         <>
-          {tab === "dashboard" && <Dashboard opdList={opdList} dokumenList={dokumenList} />}
-          {tab === "input" && <InputOPD opdList={opdList} dokumenList={dokumenList} />}
-          {tab === "verifikasi" && <Verifikasi verifikatorList={verifikatorList} />}
+          {tab === "dashboard" && <Dashboard opdList={opdList} dokumenList={dokumenList} tahun={tahun} />}
+          {tab === "input" && <InputOPD opdList={opdList} dokumenList={dokumenList} tahun={tahun} />}
+          {tab === "verifikasi" && <Verifikasi verifikatorList={verifikatorList} tahun={tahun} />}
           {tab === "apip" && <ApipView />}
         </>
       )}
